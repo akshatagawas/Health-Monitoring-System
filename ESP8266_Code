@@ -1,0 +1,90 @@
+#include <SoftwareSerial.h>
+SoftwareSerial s(D6, D5);
+#include <ArduinoJson.h>
+#include <ESP8266WiFi.h>
+#include <ThingSpeak.h>
+
+WiFiClient client;
+const char* ssid = "Akshata";
+const char* password = "81831036";
+const char* host = "api.thingspeak.com";
+const char myWriteAPIKey[] = "XP91JEEL2NVVHIMP";
+long myChannelNumber = 1701489;
+
+
+void setup() {
+// Open serial communications and wait for port to open:
+  Serial.begin(115200);
+  s.begin(115200);
+  Serial.println("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while(WiFi.status() != WL_CONNECTED){
+    delay(500);
+    Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println(WiFi.localIP());
+    ThingSpeak.begin(client);
+  while (!Serial) {
+    continue;
+  }
+}
+void loop() { // run over and over   
+
+  StaticJsonBuffer<1000> jsonBuffer;
+  JsonObject& root = jsonBuffer.parseObject(s);
+  if(root == JsonObject::invalid()){
+    //Serial.println("Invalid");
+    jsonBuffer.clear();
+    return;
+    }
+   
+
+  //Serial.println("JSON recieved and parsed");
+  
+  int data1 = root["BPM"];
+  float data2 = root["temp"];
+  
+
+  
+  const int httpPort = 80;
+  if(!client.connect(host, httpPort)){
+    Serial.println("connected");
+     return;
+  }
+//  String url = "/update?key";
+//  url+=writeAPIKey;
+//  url+="&field1=";
+//  url+=String(data1);
+//  url+="&field2=";
+//  url+=String(data2);
+//  url+="\r\n";
+
+  //client.print(String("GET") + url + "HTTP/1.1\r\n" + "Host: " + host + "\r\n" + "Connection: close\r\n\r\n");
+
+  Serial.print("BPM: ");
+  Serial.println(data1);
+
+  Serial.print("Temperature: ");
+  Serial.println(data2);
+  
+  ThingSpeak.writeField(myChannelNumber, 1, data1, myWriteAPIKey);
+  ThingSpeak.writeField(myChannelNumber, 2, data2, myWriteAPIKey);
+
+  
+  Serial.println("------------------------------------");
+  //client.stop();
+  Serial.println("Wait 15 sec");
+  
+  delay(2000);
+
+  
+  
+
+   
+
+    
+  
+}
